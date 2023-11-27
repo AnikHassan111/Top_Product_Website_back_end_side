@@ -32,9 +32,9 @@ async function run() {
     const weblogo_imgCollection = client
       .db("Assigment_12")
       .collection("weblogo");
-    const featuredProductCollection = client
+    const allProductCollection = client
       .db("Assigment_12")
-      .collection("featuredProduct");
+      .collection("allProduct");
 
     //   Get Web Logo Img
     app.get("/weblogo", async (req, res) => {
@@ -49,27 +49,38 @@ async function run() {
     });
 
     // Get Featured Product item
-    app.get("/featuredProduct", async (req, res) => {
-      const result = await featuredProductCollection.find().toArray();
+    app.get("/allProdcut/featured/:featuredItem", async (req, res) => {
+      const featuredItem = req.params.featuredItem;
+
+      const query = { featured: featuredItem };
+      const result = await allProductCollection.find(query).toArray();
+      res.send(result);
+    });
+    // Get Tranding Product item
+    app.get("/allProdcut/trandign/:tranding", async (req, res) => {
+      const trandingItem = req.params.tranding;
+
+      const query = { trending: trandingItem };
+      const result = await allProductCollection.find(query).toArray();
       res.send(result);
     });
 
     // Update Featured Product Vote
     app.patch("/updateFeaturedVote/:id", async (req, res) => {
       const id = req.params.id;
-      const newVote = req.body;
+      const { newVote } = req.body;
+      console.log(newVote);
       const filter = { _id: new ObjectId(id) };
       const updateDoc = {
         $set: {
-          vote: newVote,
+          votes: newVote,
         },
       };
-      const result = await featuredProductCollection.updateOne(
-        filter,
-        updateDoc
-      );
+      const result = await allProductCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
+
+    //
 
     await client.db("admin").command({ ping: 1 });
     console.log(
