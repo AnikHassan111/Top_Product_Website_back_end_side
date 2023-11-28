@@ -143,6 +143,14 @@ async function run() {
       res.send(result);
     });
 
+    // Delete Owner Product Api
+    app.delete("/myproductDelete/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await ownerProductCollection.deleteOne(query);
+      res.send(result);
+    });
+
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
