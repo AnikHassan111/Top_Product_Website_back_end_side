@@ -135,6 +135,14 @@ async function run() {
       // const
     });
 
+    // Owner Product get Api
+    app.get("/myproduct", async (req, res) => {
+      const { email } = req.query;
+      const query = { ownerEmail: email };
+      const result = await ownerProductCollection.find(query).toArray();
+      res.send(result);
+    });
+
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
