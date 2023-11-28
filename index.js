@@ -35,6 +35,9 @@ async function run() {
     const allProductCollection = client
       .db("Assigment_12")
       .collection("allProduct");
+    const ownerProductCollection = client
+      .db("Assigment_12")
+      .collection("ownerProduct");
 
     //   Get Web Logo Img
     app.get("/weblogo", async (req, res) => {
@@ -122,6 +125,14 @@ async function run() {
       };
       const result = await allProductCollection.updateOne(query, updateDoc);
       res.send(result);
+    });
+
+    // Owner Product Add api
+    app.post("/addOwnerproduct", async (req, res) => {
+      const body = req.body;
+      const result = await ownerProductCollection.insertOne(body);
+      res.send(result);
+      // const
     });
 
     await client.db("admin").command({ ping: 1 });
