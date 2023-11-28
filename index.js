@@ -110,6 +110,20 @@ async function run() {
       res.send(result);
     });
 
+    // Update Review Product
+    app.patch("/updateReview/:id", async (req, res) => {
+      const reviews = req.body;
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          review: reviews,
+        },
+      };
+      const result = await allProductCollection.updateOne(query, updateDoc);
+      res.send(result);
+    });
+
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
