@@ -151,6 +151,30 @@ async function run() {
       res.send(result);
     });
 
+    // owner Update Product api
+
+    app.get("/ownerProductget/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await ownerProductCollection.findOne(query);
+      res.send(result);
+    });
+    app.patch("/ownerProductUpdate/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const { img, name, description, externalLink } = req.body;
+      const updateDoc = {
+        $set: {
+          img: img,
+          name: name,
+          description: description,
+          externalLink: externalLink,
+        },
+      };
+      const result = await ownerProductCollection.updateOne(query, updateDoc);
+      res.send(result);
+    });
+
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
