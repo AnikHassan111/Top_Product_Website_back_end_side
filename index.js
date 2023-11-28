@@ -52,7 +52,7 @@ async function run() {
     app.get("/allProdcut/featured/:featuredItem", async (req, res) => {
       const featuredItem = req.params.featuredItem;
 
-      const query = { featured: featuredItem };
+      const query = { featured: true };
       const result = await allProductCollection.find(query).toArray();
       res.send(result);
     });
@@ -63,7 +63,7 @@ async function run() {
         sort: { votes: -1 },
       };
 
-      const query = { trending: trandingItem };
+      const query = { trending: true };
       const result = await allProductCollection.find(query, options).toArray();
       res.send(result);
     });
@@ -94,6 +94,19 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await allProductCollection.findOne(query);
+      res.send(result);
+    });
+
+    // Report Product
+    app.patch("/reportProduct/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          report: true,
+        },
+      };
+      const result = await allProductCollection.updateOne(query, updateDoc);
       res.send(result);
     });
 
