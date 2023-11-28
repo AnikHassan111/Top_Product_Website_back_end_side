@@ -59,9 +59,12 @@ async function run() {
     // Get Tranding Product item
     app.get("/allProdcut/trandign/:tranding", async (req, res) => {
       const trandingItem = req.params.tranding;
+      const options = {
+        sort: { votes: -1 },
+      };
 
       const query = { trending: trandingItem };
-      const result = await allProductCollection.find(query).toArray();
+      const result = await allProductCollection.find(query, options).toArray();
       res.send(result);
     });
 
@@ -80,7 +83,11 @@ async function run() {
       res.send(result);
     });
 
-    //
+    //Get ALl Product
+    app.get("/product", async (req, res) => {
+      const result = await allProductCollection.find().toArray();
+      res.send(result);
+    });
 
     await client.db("admin").command({ ping: 1 });
     console.log(
