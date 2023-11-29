@@ -38,6 +38,7 @@ async function run() {
     const ownerProductCollection = client
       .db("Assigment_12")
       .collection("ownerProduct");
+    const usersCollection = client.db("Assigment_12").collection("users");
 
     //   Get Web Logo Img
     app.get("/weblogo", async (req, res) => {
@@ -172,6 +173,31 @@ async function run() {
         },
       };
       const result = await ownerProductCollection.updateOne(query, updateDoc);
+      res.send(result);
+    });
+
+    // Set User DataBase
+    app.post("/userRole", async (req, res) => {
+      const body = req.body;
+      const result = await usersCollection.insertOne(body);
+      res.send(result);
+    });
+
+    app.get("/alluser", async (req, res) => {
+      const result = await usersCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.patch("/changeUserRole", async (req, res) => {
+      const { email, roles } = req.body;
+      const query = { email: email };
+      const updateDoc = {
+        $set: {
+          email: email,
+          roles: roles,
+        },
+      };
+      const result = await usersCollection.updateOne(query, updateDoc);
       res.send(result);
     });
 
