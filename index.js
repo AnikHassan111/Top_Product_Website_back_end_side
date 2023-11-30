@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const app = express();
+const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const port = process.env.PORT || 5000;
@@ -11,6 +12,20 @@ app.use(cors());
 app.use(express.json());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.wnl4pp8.mongodb.net/?retryWrites=true&w=majority`;
+
+const varifyToken = (req, res, next) => {
+  if (!req.headers.authorization) {
+    return res.status(401).send({ message: "Access Deny" });
+  }
+  const token = req.headers.authorization.split(" ")[1];
+  jwt.verify(token, process.env.ACCESS_TOKEN, (err, decoded) => {
+    if (err) {
+      return res.status(401).send({ message: "Access Deny" });
+    }
+    req.decoded = decoded;
+    next();
+  });
+};
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -40,6 +55,29 @@ async function run() {
       .collection("ownerProduct");
     const usersCollection = client.db("Assigment_12").collection("users");
 
+    app.post("/jwt", async (req, res) => {
+      const data = req.body;
+      const token = jwt.sign(data, process.env.ACCESS_TOKEN, {
+        expiresIn: "72h",
+      });
+      res.send({ token });
+    });
+
+    // Check Admin Api
+    app.get("/checkAdmin/:email", varifyToken, async (req, res) => {
+      const email = req.params.email;
+      if (email != req.decoded.email) {
+        return res.status(401).send({ message: "Access Deny" });
+      }
+      const query = { email: email };
+      const findAdmin = await usersCollection.findOne(query);
+
+      let isAdmin;
+      if (findAdmin) {
+        isAdmin = findAdmin.role;
+      }
+      res.send({ isAdmin });
+    });
     //   Get Web Logo Img
     app.get("/weblogo", async (req, res) => {
       const result = await weblogo_imgCollection.find().toArray();
@@ -73,10 +111,10 @@ async function run() {
     });
 
     // Update Featured Product Vote
-    app.patch("/updateFeaturedVote/:id", async (req, res) => {
+    app.patch("/updateFeaturedVote/:id", varifyToken, async (req, res) => {
       const id = req.params.id;
       const { newVote } = req.body;
-      console.log(newVote);
+
       const filter = { _id: new ObjectId(id) };
       const updateDoc = {
         $set: {
@@ -89,12 +127,20 @@ async function run() {
 
     //Get ALl Product
     app.get("/product", async (req, res) => {
+      console.log(req.query);
       const result = await allProductCollection.find().toArray();
       res.send(result);
     });
 
+    // Get Search Product
+    app.get("/searchProduct/:search", async (req, res) => {
+      const searchs = req.params.search;
+      const query = { tags: searchs };
+      const result = await allProductCollection.find(query).toArray();
+      res.send(result);
+    });
     // Get Product Details
-    app.get("/productDetails/:id", async (req, res) => {
+    app.get("/productDetails/:id", varifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await allProductCollection.findOne(query);
@@ -102,7 +148,7 @@ async function run() {
     });
 
     // Report Product
-    app.patch("/reportProduct/:id", async (req, res) => {
+    app.patch("/reportProduct/:id", varifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const updateDoc = {
@@ -179,6 +225,12 @@ async function run() {
     // Set User DataBase
     app.post("/userRole", async (req, res) => {
       const body = req.body;
+      const { email } = body;
+      const query = { email: email };
+      const exiest = await usersCollection.findOne(query);
+      if (exiest) {
+        return res.send({ message: "User already Existe", insteredId: null });
+      }
       const result = await usersCollection.insertOne(body);
       res.send(result);
     });
@@ -189,12 +241,12 @@ async function run() {
     });
 
     app.patch("/changeUserRole", async (req, res) => {
-      const { email, roles } = req.body;
+      const { email, role } = req.body;
       const query = { email: email };
       const updateDoc = {
         $set: {
           email: email,
-          roles: roles,
+          role: role,
         },
       };
       const result = await usersCollection.updateOne(query, updateDoc);
@@ -208,6 +260,62 @@ async function run() {
       res.send(result);
     });
 
+    // User add product review
+    app.get("/userAddProductReview", async (req, res) => {
+      const result = await ownerProductCollection.find().toArray();
+      res.send(result);
+    });
+
+    // User Product Details
+    app.get("/userprodcutdetais/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await ownerProductCollection.findOne(query);
+      res.send(result);
+    });
+
+    // User Product status update
+    app.patch("/userProductstatusUpdate/:id", async (req, res) => {
+      const id = req.params.id;
+      const { statuss } = req.body;
+
+      const query = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          status: statuss,
+        },
+      };
+      const result = await ownerProductCollection.updateOne(query, updateDoc);
+      res.send(result);
+    });
+
+    // User Product add main data base
+    app.post("/userproductAddMaindatabase", async (req, res) => {
+      const body = req.body;
+      const result = await allProductCollection.insertOne(body);
+      res.send(result);
+    });
+
+    // All report Product Api
+    app.get("/reportProduct", async (req, res) => {
+      const query = { report: true };
+      const result = await allProductCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // Report Product Delete APi
+    app.delete("/reportProductDelete/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await allProductCollection.deleteOne(query);
+      res.send(result);
+    });
+    // Product Count
+    app.get("/getProductCount", async (req, res) => {
+      const productresult = await allProductCollection.estimatedDocumentCount();
+      const userCount = await usersCollection.estimatedDocumentCount();
+      res.send([productresult, userCount]);
+    });
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
